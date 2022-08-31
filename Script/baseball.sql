@@ -61,10 +61,31 @@ order by stolen_percent desc;
 --Chris Owings had the highest sb percent at 91.3%
 
 -- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
+with most_wins AS(select name, yearid, w, wswin
+                   from teams
+                   where yearid between 1970 and 2016
+                   and wswin = 'N'
+                   order by w desc
+                   limit 1),
+                   
+     least_wins as(select name, yearid, w, wswin
+                  from teams
+                  where yearid between 1970 and 2016
+                  and wswin = 'Y'
+                  and yearid <>1981
+                  order by w
+                  limit 1)
 
+Select *
+from most_wins
+Union all
+select * 
+from least_wins;
+-- "Seattle Mariners"	2001	116	"N"       "St. Louis Cardinals"	2006	83	"Y"
+              
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
-select team,park_name, (attendance/games) as avg_attendance
+select team, park_name, (attendance/games) as avg_attendance
 from homegames
 inner join parks
 using(park)
@@ -93,3 +114,29 @@ limit 5;
 "CLE"	"Progressive Field"	19650
 "MIA"	"Marlins Park"	21405
 "CHA"	"U.S. Cellular Field"	21559 */
+
+-- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+WITH al_awards AS (select namefirst, namelast, m.teamid
+                        from managers as m
+                        inner join people as p
+                        using(playerid)
+                         inner join awardsmanagers as a
+                         using(playerid)
+                       where awardid = 'TSN Manager of the Year'
+                         and a.lgid = 'AL'),
+                         
+     nl_awards as (select namefirst, namelast, m.teamid
+                        from managers as m
+                        inner join people as p
+                        using(playerid)
+                         inner join awardsmanagers as a
+                         using(playerid)
+                       where awardid = 'TSN Manager of the Year'
+                         and a.lgid = 'NL')
+                         
+ select  *
+ from al_awards
+ union 
+ select *
+ from nl_awards;
+
