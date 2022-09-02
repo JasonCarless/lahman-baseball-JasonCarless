@@ -116,14 +116,14 @@ limit 5;
 "CHA"	"U.S. Cellular Field"	21559 */
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
-WITH awards AS (SELECT playerid, awardid, COUNT(DISTINCT lgid) AS lg_count
+WITH awards AS (SELECT playerid, awardid
 				   FROM awardsmanagers
 				   WHERE awardid = 'TSN Manager of the Year'
 				   		 AND lgid IN ('NL', 'AL')
 				   GROUP BY playerid, awardid
 				   HAVING COUNT(DISTINCT lgid) = 2),
                    
-	 mgrs AS (SELECT playerid, awardid, lg_count, yearid, lgid
+	 mgrs AS (SELECT playerid, awardid, yearid, lgid
 				   FROM awards
                    INNER JOIN awardsmanagers 
                    USING(playerid, awardid))
@@ -139,5 +139,23 @@ ON mgrs.yearid = teams.yearid AND managers.teamid = teams.teamid;
 -- Davey Johnson with the Orioles and Nationals. Jim Leyland with the Pirates and Tigers
 
 --10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
-with best_year as (SELECT max(hr)
+select namefirst, namelast, hr 
+from people
+inner join batting
+using(playerid)
+where yearid = '2016'
+and hr IN(
+    select max(hr) as career_high
+    from(
+        Select namefirst,namelast, hr
+    from people
+    inner join batting
+    using(playerid)
+    where yearid = '2016') as subquery
+group by namefirst, namelast)
+group by namefirst, namelast, hr
+having count(yearid) > 9
+and sum(hr) > 0;
+  
+ 
 
