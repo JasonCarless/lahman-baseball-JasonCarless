@@ -116,27 +116,28 @@ limit 5;
 "CHA"	"U.S. Cellular Field"	21559 */
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
-WITH al_awards AS (select namefirst, namelast, m.teamid
-                        from managers as m
-                        inner join people as p
-                        using(playerid)
-                         inner join awardsmanagers as a
-                         using(playerid)
-                       where awardid = 'TSN Manager of the Year'
-                         and a.lgid = 'AL'),
-                         
-     nl_awards as (select namefirst, namelast, m.teamid
-                        from managers as m
-                        inner join people as p
-                        using(playerid)
-                         inner join awardsmanagers as a
-                         using(playerid)
-                       where awardid = 'TSN Manager of the Year'
-                         and a.lgid = 'NL')
-                         
- select  *
- from al_awards
- union 
- select *
- from nl_awards;
+WITH awards AS (SELECT playerid, awardid, COUNT(DISTINCT lgid) AS lg_count
+				   FROM awardsmanagers
+				   WHERE awardid = 'TSN Manager of the Year'
+				   		 AND lgid IN ('NL', 'AL')
+				   GROUP BY playerid, awardid
+				   HAVING COUNT(DISTINCT lgid) = 2),
+                   
+	 mgrs AS (SELECT playerid, awardid, lg_count, yearid, lgid
+				   FROM awards
+                   INNER JOIN awardsmanagers 
+                   USING(playerid, awardid))
+
+SELECT DISTINCT namefirst, namelast, name AS team, mgrs.lgid, mgrs.yearid
+FROM mgrs
+INNER JOIN people 
+USING(playerid)
+INNER JOIN managers 
+USING(playerid, yearid, lgid)
+INNER JOIN teams 
+ON mgrs.yearid = teams.yearid AND managers.teamid = teams.teamid;
+-- Davey Johnson with the Orioles and Nationals. Jim Leyland with the Pirates and Tigers
+
+--10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+with best_year as (SELECT max(hr)
 
